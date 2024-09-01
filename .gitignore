@@ -1,0 +1,10 @@
+.idea
+.venv
+**/bin/
+**/build/
+**/obj/
+**/cmake-build-debug
+**/cmake-build-release
+py2py_logs
+notes
+__pycache__
