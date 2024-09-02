@@ -8,9 +8,11 @@
 extern int FAIL_COUNT;
 #endif
 
+void reset_fakes();
+
 #define TEST(name) void name(void)
 #define RUN_TEST(test) do { \
-  setup();                  \
+  reset_fakes(); \
   int curr = FAIL_COUNT;   \
   printf("Running '%s'... ", #test); \
   test();                 \

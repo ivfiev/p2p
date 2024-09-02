@@ -1,13 +1,6 @@
 #include "p2p.h"
-#include "fff.h"
 #include "test.h"
 #include "fakes.h"
-
-
-void setup(void) {
-  RESET_FAKE(close);
-  RESET_FAKE(free);
-}
 
 TEST(close1_calls_close) {
   epoll_cb *cb = alloc_cb(1);
