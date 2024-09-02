@@ -1,3 +1,6 @@
+#ifndef P2P
+#define P2P
+
 #include <stdio.h>
 #include <sys/epoll.h>
 #include <stdlib.h>
@@ -52,7 +55,15 @@ typedef struct timer_data {
 
 int timer(long ms, void (*on_tick)(epoll_cb *cb), void *data);
 
-// misc
+// log
+struct log_data {
+  int stdout_fd;
+  int stderr_fd;
+  int socket_fd;
+  char *port;
+  bool reconnect;
+};
+
 void err_fatal(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
 void err_info(const char *format, ...) __attribute__((format(printf, 1, 2)));
@@ -104,3 +115,5 @@ void trim_end(char *);
 void **rand_select(void **elems, size_t len, size_t k);
 
 void timestamp(char *);
+
+#endif

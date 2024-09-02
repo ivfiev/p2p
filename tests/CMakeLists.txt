@@ -15,6 +15,7 @@ add_executable(p2p_tests
         socket_test.c
         fakes.h
         fakes.c
+        log_test.c
 )
 
 target_link_libraries(p2p_tests m)

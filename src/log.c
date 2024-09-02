@@ -6,14 +6,6 @@ extern char *NAME;
 
 int DEBUG_ENABLED;
 
-struct log_data {
-  int stdout_fd;
-  int stderr_fd;
-  int socket_fd;
-  char *port;
-  bool reconnect;
-};
-
 void on_error(epoll_cb *cb) {
   static int pipe_fd;
   static int stdout_fd;

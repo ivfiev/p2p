@@ -14,12 +14,12 @@ void reset_fakes();
 #define RUN_TEST(test) do { \
   reset_fakes(); \
   int curr = FAIL_COUNT;   \
-  printf("Running '%s'... ", #test); \
+  printf("Running '%s'...\n", #test); \
   test();                 \
   if (FAIL_COUNT > curr) {\
-    printf("'%s' failed!\n", #test);                        \
+    printf("✗ '%s' failed!\n\n", #test);                        \
   } else {                \
-  printf("'%s' passed!\n", #test); \
+  printf("✓ '%s' passed!\n\n", #test); \
   }                        \
 } while (0)
 

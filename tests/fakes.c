@@ -20,14 +20,19 @@ FAKE_VALUE_FUNC(int, getaddrinfo, const char *, const char *, const struct addri
 FAKE_VOID_FUNC(freeaddrinfo, struct addrinfo *);
 FAKE_VALUE_FUNC(int, socket, int, int, int);
 FAKE_VALUE_FUNC(int, connect, int, const struct sockaddr *, socklen_t);
+FAKE_VALUE_FUNC(ssize_t, write, int, const void *, size_t);
+FAKE_VALUE_FUNC(ssize_t, read, int, void *, size_t);
+FAKE_VALUE_FUNC(ssize_t, send, int, const void *, size_t, int);
 
 void reset_fakes(void) {
   RESET_FAKE(getaddrinfo);
   RESET_FAKE(freeaddrinfo);
-  RESET_FAKE(close);
   RESET_FAKE(connect);
   RESET_FAKE(close);
   RESET_FAKE(free);
+  RESET_FAKE(write);
+  RESET_FAKE(read);
+  RESET_FAKE(send);
 
   getaddrinfo_fake.custom_fake = getaddrinfo_custom_fake;
 }
