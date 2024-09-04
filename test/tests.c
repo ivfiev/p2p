@@ -1,8 +1,8 @@
-#include "p2p.h"
 #include "test.h"
 
 int EPFD;
 int FAIL_COUNT;
+int TEST_COUNT;
 
 void cb_test_run(void);
 
@@ -14,8 +14,7 @@ int main(void) {
   cb_test_run();
   socket_test_run();
   log_test_run();
-  if (FAIL_COUNT > 0) {
-    printf("\n\nTests failed! %d\n", FAIL_COUNT);
-  }
+  printf("\n\nTests run:\t\t%d\n", TEST_COUNT);
+  printf("Tests failed:\t%d\n", FAIL_COUNT);
   return FAIL_COUNT;
 }

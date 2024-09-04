@@ -19,4 +19,4 @@ add_executable(p2p
 
 target_link_libraries(p2p m)
 
-add_subdirectory(tests)
+add_subdirectory(test)

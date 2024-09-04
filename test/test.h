@@ -6,12 +6,14 @@
 #ifndef FAILS
 #define FAILS
 extern int FAIL_COUNT;
+extern int TEST_COUNT;
 #endif
 
 void reset_fakes();
 
 #define TEST(name) void name(void)
 #define RUN_TEST(test) do { \
+  TEST_COUNT++;  \
   reset_fakes(); \
   int curr = FAIL_COUNT;   \
   printf("Running '%s'...\n", #test); \
