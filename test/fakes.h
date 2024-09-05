@@ -17,4 +17,5 @@ DECLARE_FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t)
 DECLARE_FAKE_VALUE_FUNC(int, bind, int, const struct sockaddr *, socklen_t);
 DECLARE_FAKE_VALUE_FUNC(int, listen, int, int);
 DECLARE_FAKE_VALUE_FUNC(int, timerfd_settime, int, int, const struct itimerspec *, struct itimerspec *);
+DECLARE_FAKE_VALUE_FUNC(void **, rand_select, void **, size_t, size_t);
 #endif //P2P_FAKES_H

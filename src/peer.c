@@ -1,9 +1,5 @@
 #include "p2p.h"
 
-typedef struct peer_descriptor {
-  int fd;
-  epoll_cb *cb;
-} PD;
 
 extern int EPFD;
 

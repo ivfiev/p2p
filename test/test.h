@@ -25,11 +25,37 @@ void reset_fakes();
   }                        \
 } while (0)
 
+#define ASSERT(bool_expr) do { \
+  if (!(bool_expr)) {          \
+    FAIL_COUNT++;                            \
+    printf("Assertion failed: %s\n", #bool_expr); \
+    return; \
+  }                              \
+} while (0)
+
 #define ASSERT_EQ(expected, actual) do { \
   if ((expected) != (actual)) {        \
     FAIL_COUNT++;                            \
     printf("Assertion failed: %s == %s\n", #expected, #actual); \
     printf("Expected: %d, Actual: %d\n", (expected), (actual)); \
+    return; \
+  } \
+} while (0)
+
+#define ASSERT_PTR_EQ(expected, actual) do { \
+  if ((expected) != (actual)) {        \
+    FAIL_COUNT++;                            \
+    printf("Assertion failed: %s == %s\n", #expected, #actual); \
+    printf("Expected: %p, Actual: %p\n", (expected), (actual)); \
+    return; \
+  } \
+} while (0)
+
+#define ASSERT_STR_EQ(expected, actual) do { \
+  if (strcmp(expected, actual) != 0) {        \
+    FAIL_COUNT++;                            \
+    printf("Assertion failed: %s == %s\n", #expected, #actual); \
+    printf("Expected: %s, Actual: %s\n", (expected), (actual)); \
     return; \
   } \
 } while (0)

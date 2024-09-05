@@ -40,6 +40,14 @@ ssize_t read2(epoll_cb *cb, char *buf);
 
 void close1(epoll_cb *cb);
 
+// peer
+typedef struct peer_descriptor {
+  int fd;
+  epoll_cb *cb;
+} PD;
+
+void peer_reconnect(epoll_cb *cb); // timer cb
+
 // socket
 int listen1(const char *port);
 

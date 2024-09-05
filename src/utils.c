@@ -35,6 +35,7 @@ double randf() {
   return (double)rand() / RAND_MAX;
 }
 
+__attribute__((weak))
 void **rand_select(void **elems, size_t len, size_t k) {
   void **result = calloc(k, sizeof(void *));
   int selected = 0;

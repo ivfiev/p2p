@@ -29,6 +29,7 @@ FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t);
 FAKE_VALUE_FUNC(int, bind, int, const struct sockaddr *, socklen_t);
 FAKE_VALUE_FUNC(int, listen, int, int);
 FAKE_VALUE_FUNC(int, timerfd_settime, int, int, const struct itimerspec *, struct itimerspec *);
+FAKE_VALUE_FUNC(void **, rand_select, void **, size_t, size_t);
 
 void reset_fakes(void) {
   RESET_FAKE(getaddrinfo);
