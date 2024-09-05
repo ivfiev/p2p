@@ -23,6 +23,12 @@ FAKE_VALUE_FUNC(int, connect, int, const struct sockaddr *, socklen_t);
 FAKE_VALUE_FUNC(ssize_t, write, int, const void *, size_t);
 FAKE_VALUE_FUNC(ssize_t, read, int, void *, size_t);
 FAKE_VALUE_FUNC(ssize_t, send, int, const void *, size_t, int);
+FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *);
+FAKE_VALUE_FUNC(int, epoll_ctl, int, int, int, struct epoll_event *);
+FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t);
+FAKE_VALUE_FUNC(int, bind, int, const struct sockaddr *, socklen_t);
+FAKE_VALUE_FUNC(int, listen, int, int);
+FAKE_VALUE_FUNC(int, timerfd_settime, int, int, const struct itimerspec *, struct itimerspec *);
 
 void reset_fakes(void) {
   RESET_FAKE(getaddrinfo);
@@ -33,6 +39,9 @@ void reset_fakes(void) {
   RESET_FAKE(write);
   RESET_FAKE(read);
   RESET_FAKE(send);
+  RESET_FAKE(accept);
+  RESET_FAKE(epoll_ctl);
+  RESET_FAKE(timerfd_settime);
 
   getaddrinfo_fake.custom_fake = getaddrinfo_custom_fake;
 }

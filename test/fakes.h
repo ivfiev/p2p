@@ -11,4 +11,10 @@ DECLARE_FAKE_VALUE_FUNC(int, connect, int, const struct sockaddr *, socklen_t);
 DECLARE_FAKE_VALUE_FUNC(ssize_t, write, int, const void *, size_t);
 DECLARE_FAKE_VALUE_FUNC(ssize_t, read, int, void *, size_t);
 DECLARE_FAKE_VALUE_FUNC(ssize_t, send, int, const void *, size_t, int);
+DECLARE_FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *);
+DECLARE_FAKE_VALUE_FUNC(int, epoll_ctl, int, int, int, struct epoll_event *);
+DECLARE_FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t);
+DECLARE_FAKE_VALUE_FUNC(int, bind, int, const struct sockaddr *, socklen_t);
+DECLARE_FAKE_VALUE_FUNC(int, listen, int, int);
+DECLARE_FAKE_VALUE_FUNC(int, timerfd_settime, int, int, const struct itimerspec *, struct itimerspec *);
 #endif //P2P_FAKES_H

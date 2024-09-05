@@ -12,9 +12,9 @@ int is_timer(int fd);
 
 void on_error(epoll_cb *cb);
 
-void init_logs_flush(void);
+static void init_logs_flush(void);
 
-int cmp_events(struct epoll_event *e1, struct epoll_event *e2) {
+static int cmp_events(struct epoll_event *e1, struct epoll_event *e2) {
   epoll_cb *cb1 = e1->data.ptr;
   epoll_cb *cb2 = e2->data.ptr;
   int t1 = is_timer(cb1->fd);
@@ -56,14 +56,14 @@ int main(int argc, char **argv) {
   }
 }
 
-void flush_logs(int sig) {
+static void flush_logs(int sig) {
   // not reentrant-safe...
   log_info("Signal [%s:%d] received, errno [%s], flushing & aborting...", strsignal(sig), sig, strerror(errno));
   on_error(NULL);
   exit(1);
 }
 
-void init_logs_flush(void) {
+static void init_logs_flush(void) {
   int sigs[] = {SIGABRT, SIGINT, SIGTERM, SIGFPE, SIGSEGV, SIGPIPE, 0};
   struct sigaction sig;
   memset(&sig, 0, sizeof(sig));

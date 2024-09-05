@@ -8,14 +8,14 @@ typedef struct peer_descriptor {
 extern int EPFD;
 
 char *NAME;
-static hashtable *peers;
+hashtable *peers;
 const int tick_ms = 500;
 
 epoll_cb *init_peer(int fd);
 
-PD *get_pd(int fd, epoll_cb *cb);
+static PD *get_pd(int fd, epoll_cb *cb);
 
-void clear_pd(PD *pd);
+static void clear_pd(PD *pd);
 
 void exec_cmd(char *cmd, char **args, int argc, epoll_cb *cb) {
   for (int i = 0; i < argc; i++) {
@@ -111,7 +111,7 @@ void disconnect_peer(epoll_cb *cb) {
     PD *pd = hash_getv(peers, cb->data);
     cb->data = NULL;
     if (pd->fd == cb->fd) {
-      clear_pd(pd); // leave it in
+      clear_pd(pd); // leave it in, key is a known peer name. are we clearing it twice?
     }
   }
 }
@@ -224,14 +224,12 @@ void init(char *port) {
   cb->event.events = EPOLLIN;
   cb->on_EPOLLIN = accept_peer;
   epoll_ctl(EPFD, EPOLL_CTL_ADD, fd, &cb->event);
-
   peers = hash_new(128, hash_str, (int (*)(void *, void *))strcmp);
-
   timer(tick_ms, peer_tick, NULL);
   timer(2 * tick_ms + 113, peer_reconnect, NULL);
 }
 
-PD *get_pd(int fd, epoll_cb *cb) {
+static PD *get_pd(int fd, epoll_cb *cb) {
   PD *pd = (PD *)malloc(sizeof(PD));
   clear_pd(pd);
   pd->fd = fd;
@@ -239,6 +237,6 @@ PD *get_pd(int fd, epoll_cb *cb) {
   return pd;
 }
 
-void clear_pd(PD *pd) {
+static void clear_pd(PD *pd) {
   memset(pd, 0, sizeof(PD));
 }
