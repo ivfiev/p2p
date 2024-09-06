@@ -1,5 +1,16 @@
-#include "p2p.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <math.h>
+#include "hash.h"
+#include "util.h"
+#include "log.h"
+#include "peer.h"
+#include "socket.h"
 
+#define BUF_SIZE 4096
 
 extern int EPFD;
 

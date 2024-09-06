@@ -1,6 +1,7 @@
 #include <sys/time.h>
 #include <time.h>
-#include "p2p.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 void trim_end(char *str) {
   while (*str) {

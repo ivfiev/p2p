@@ -1,5 +1,16 @@
 #include <stdarg.h>
-#include "p2p.h"
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include "util.h"
+#include "log.h"
+#include "socket.h"
+#include "cb.h"
+
+#define BUF_SIZE 4096
 
 extern int EPFD;
 extern char *NAME;

@@ -1,6 +1,8 @@
-#include "p2p.h"
+#include <malloc.h>
 #include "test.h"
 #include "fakes.h"
+#include "log.h"
+#include "cb.h"
 
 void on_error(epoll_cb *cb);
 

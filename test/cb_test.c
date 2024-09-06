@@ -1,6 +1,6 @@
-#include "p2p.h"
 #include "test.h"
 #include "fakes.h"
+#include "cb.h"
 
 TEST(close1_calls_close) {
   epoll_cb *cb = alloc_cb(1);

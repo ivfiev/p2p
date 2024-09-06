@@ -1,4 +1,5 @@
-#include "p2p.h"
+#include <stdlib.h>
+#include "hash.h"
 
 hashtable *hash_new(size_t cap, size_t (*hash)(void *ptr, size_t N), int (*cmp)(void *k1, void *k2)) {
   struct node **vs = calloc(cap, sizeof(struct node *));

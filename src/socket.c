@@ -1,4 +1,9 @@
-#include "p2p.h"
+#include <netdb.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include "log.h"
 
 int listen1(const char *port) {
   struct addrinfo hints;

@@ -1,7 +1,7 @@
-#include "p2p.h"
 #include <malloc.h>
 #include "test.h"
 #include "fakes.h"
+#include "socket.h"
 
 TEST(connect1_happy_case) {
   connect1("80808080");

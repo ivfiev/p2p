@@ -1,6 +1,12 @@
 #include <time.h>
 #include <signal.h>
-#include "p2p.h"
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+#include "log.h"
+#include "cb.h"
+
+#define EPOLL_MAX_EVENTS 128
 
 int EPFD;
 

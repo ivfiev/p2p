@@ -1,5 +1,12 @@
 #include <sys/timerfd.h>
-#include "p2p.h"
+#include <string.h>
+#include <malloc.h>
+#include <unistd.h>
+#include "hash.h"
+#include "log.h"
+#include "cb.h"
+
+#define BUF_SIZE 4096
 
 extern int EPFD;
 extern char *NAME;

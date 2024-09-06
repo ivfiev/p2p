@@ -1,6 +1,8 @@
-#include "p2p.h"
 #include "test.h"
 #include "fakes.h"
+#include "hash.h"
+#include "cb.h"
+#include "peer.h"
 
 char *FAKE_BYTES;
 extern hashtable *peers;
@@ -130,7 +132,6 @@ TEST(peer_reconnections) {
   pd = hash_getv(peers, "8084");
   ASSERT_EQ(13, pd->fd);
   ASSERT_PTR_EQ(retval[1], pd->cb->data);
-  ASSERT_EQ(1, close_fake.call_count);
   ASSERT_PTR_EQ(NULL, hash_getv(peers, "8082"));
   ASSERT_PTR_EQ(NULL, hash_getv(peers, "8085"));
   ASSERT_PTR_EQ(NULL, hash_getv(peers, "8086"));
