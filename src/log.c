@@ -4,7 +4,7 @@
 extern int EPFD;
 extern char *NAME;
 
-int DEBUG_ENABLED;
+int LOG_LEVEL;
 
 void on_error(epoll_cb *cb) {
   static int pipe_fd;
@@ -96,8 +96,14 @@ void init_log(char *port) {
 
   timer(5000, reset_reconnect, data);
 
-  char *debug = getenv("DEBUG");
-  DEBUG_ENABLED = debug != NULL && !strcmp(debug, "1");
+  char *level = getenv("P2P_LOG_LEVEL");
+  if (level != NULL) {
+    if (!strcmp(level, "1")) {
+      LOG_LEVEL = 1;
+    } else if (!strcmp(level, "2")) {
+      LOG_LEVEL = 2;
+    }
+  }
 }
 
 void err_fatal(const char *format, ...) {
@@ -112,18 +118,20 @@ void err_fatal(const char *format, ...) {
 }
 
 void err_info(const char *format, ...) {
-  TIMESTAMP(ts);
-  printf("[%s ERROR] [node:%s] [%s]: ", ts, NAME, strerror(errno));
-  va_list args;
-  va_start(args, format);
-  vfprintf(stdout, format, args);
-  va_end(args);
-  printf("\n");
+  if (LOG_LEVEL >= 1) {
+    TIMESTAMP(ts);
+    printf("[%s ERROR] [node:%s] [%s]: ", ts, NAME, strerror(errno));
+    va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
+    printf("\n");
+  }
 }
 
 void log_debug(const char *format, ...) {
-  TIMESTAMP(ts);
-  if (DEBUG_ENABLED) {
+  if (LOG_LEVEL >= 2) {
+    TIMESTAMP(ts);
     printf("[%s] [node:%s] ", ts, NAME);
     va_list args;
     va_start(args, format);
@@ -134,11 +142,13 @@ void log_debug(const char *format, ...) {
 }
 
 void log_info(const char *format, ...) {
-  TIMESTAMP(ts);
-  printf("[%s] [node:%s] ", ts, NAME);
-  va_list args;
-  va_start(args, format);
-  vfprintf(stdout, format, args);
-  va_end(args);
-  printf("\n");
+  if (LOG_LEVEL >= 1) {
+    TIMESTAMP(ts);
+    printf("[%s] [node:%s] ", ts, NAME);
+    va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
+    printf("\n");
+  }
 }

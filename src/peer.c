@@ -192,10 +192,10 @@ void peer_tick(epoll_cb *cb) {
   free(keys);
 }
 
-void accept_peer(epoll_cb *cb) {
-  int peer_fd = accept(cb->fd, NULL, NULL);
+epoll_cb *accept_peer(epoll_cb *listener) {
+  int peer_fd = accept(listener->fd, NULL, NULL);
   log_debug("accepting peer [%d]", peer_fd);
-  init_peer(peer_fd); // we'll store the cbs in 'peers' handler
+  return init_peer(peer_fd);
 }
 
 epoll_cb *init_peer(int peer_fd) {
@@ -218,7 +218,7 @@ void init(char *port) {
   log_info("LISTENER port [%s], fd [%d]", port, fd);
   epoll_cb *cb = alloc_cb(fd);
   cb->event.events = EPOLLIN;
-  cb->on_EPOLLIN = accept_peer;
+  cb->on_EPOLLIN = (void (*)(struct epoll_cb *))accept_peer;
   epoll_ctl(EPFD, EPOLL_CTL_ADD, fd, &cb->event);
   peers = hash_new(128, hash_str, (int (*)(void *, void *))strcmp);
   timer(tick_ms, peer_tick, NULL);
