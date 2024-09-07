@@ -146,33 +146,38 @@ void peer_reconnect(epoll_cb *cb) {
     return;
   }
   char **keys = (char **)hash_keys(peers);
-  char *cands[peers->len];
-  int c = 0;
+  size_t count = (size_t)(log((double)peers->len) / 2.0 + 1);
+  count = MIN(count, peers->len);
+  char **new = (char **)rand_select((void **)keys, peers->len, count);
   for (int i = 0; i < peers->len; i++) {
     PD *pd = hash_getv(peers, keys[i]);
-    if (pd == NULL || pd->fd <= 0) {  // maybe include connected?
-      cands[c++] = keys[i];
-    } else {
+    int connected = pd != NULL && pd->fd > 0;
+    int j;
+    for (j = 0; j < count; j++) {
+      if (new[j] == keys[i]) {
+        if (connected) {
+          // keep connection
+          break;
+        }
+        // new connection
+        log_debug("connecting to %s", new[j]);
+        int fd = connect1(new[j]);
+        epoll_cb *cb = init_peer(fd);
+        if (cb != NULL) {
+          if (pd == NULL) {
+            pd = get_pd(fd, cb);
+            hash_set(peers, new[j], pd);
+          }
+          pd->fd = fd;
+          pd->cb = cb;
+          cb->data = new[j];
+        }
+      }
+    }
+    if (j == count && connected) {
+      // drop connection
       close1(pd->cb);
       clear_pd(pd);
-    }
-  }
-  size_t count = (size_t)(log((double)peers->len) / 2.0 + 1);
-  count = MIN(count, c);
-  char **new = (char **)rand_select((void **)cands, c, count);
-  for (int i = 0; i < count; i++) {
-    log_debug("connecting to %s", new[i]);
-    int fd = connect1(new[i]);
-    epoll_cb *cb = init_peer(fd);
-    if (cb != NULL) {
-      PD *pd = hash_getv(peers, new[i]);
-      if (pd == NULL) {
-        pd = get_pd(fd, cb);
-        hash_set(peers, new[i], pd);
-      }
-      pd->fd = fd;
-      pd->cb = cb;
-      cb->data = new[i];
     }
   }
   free(new);

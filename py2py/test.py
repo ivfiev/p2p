@@ -54,18 +54,25 @@ def sample(pipe, secs):
 def report(models):
     deaths = set()
     errors = []
-    connects = 0
+    total_conn = 0
+    max_conn = 0
     known = dict()
     for model in models:
-        deaths = deaths.union(set(model['dead']))
+        deaths = deaths.union(model['dead'])
         errors.extend(model['errors'])
-        connects += sum(len(nodes) for _, nodes in model['graph'].items())
+        total_conn += sum(len(nodes) for _, nodes in model['graph'].items())
+        max_conn = max(max_conn, *(len(nodes) for _, nodes in model['graph'].items()))
         for node, nodes in model['graph'].items():
             known[node] = set(nodes).union(known.get(node, set()))
-    print(f'Models: {len(models)}')
-    print(f'Nodes: {len(models[-1]['graph'])}')
+    len_models = len(models)
+    len_nodes = len(models[-1]['graph'])
+    avg_conn = float(total_conn) / float(len_models) / float(len_nodes)
+    print(f'Models: {len_models}')
+    print(f'Nodes: {len_nodes}')
     print(f'Deaths: {deaths if deaths else 'none'}')
-    print(f'Total connections: {connects}')
+    print(f'Total connections: {total_conn}')
+    print(f'Max connections: {max_conn}')
+    print(f'Avg connections: {avg_conn:.2f}')
     print(f'Min discovered: {min(len(nodes) for _, nodes in known.items())}')
     print(f'Errors: {len(errors)}')
     for err in errors:

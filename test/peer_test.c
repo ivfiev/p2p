@@ -102,7 +102,7 @@ TEST(peer_gossip) {
   ASSERT_EQ(2, free_fake.call_count);
 }
 
-TEST(peer_reconnections) {
+TEST(peer_reconnections_new) {
   init("8080");
   read_fake.custom_fake = custom_fake_read;
   epoll_cb *cb = alloc_cb(10);
@@ -111,7 +111,7 @@ TEST(peer_reconnections) {
   FAKE_BYTES = "peers,8081,8082,8083,8084,8085,8086,8087,8088\n";
   peer_EPOLLIN(cb);
   ASSERT_STR_EQ("8081", (char *)cb->data);
-  char *retval[] = {"8083", "8084"};
+  char *retval[] = {hash_getk(peers, "8083"), hash_getk(peers, "8084")};
   rand_select_fake.return_val = (void **)retval;
   int fds[] = {12, 13};
   socket_fake.return_val_seq = fds;
@@ -122,6 +122,7 @@ TEST(peer_reconnections) {
   ASSERT_EQ(1, close_fake.call_count);
   ASSERT_EQ(3, free_fake.call_count);
   ASSERT_EQ(EPOLL_CTL_DEL, epoll_ctl_fake.arg1_history[4]);
+  ASSERT_EQ(2, connect_fake.call_count);
   // connected peers have fds, others in hash but empty
   ASSERT_EQ(8, (int)peers->len);
   PD *pd = hash_getv(peers, "8081");
@@ -140,10 +141,22 @@ TEST(peer_reconnections) {
   ASSERT_PTR_EQ(NULL, hash_getv(peers, "8088"));
 }
 
-ssize_t custom_fake_read(int fd, void *buf, size_t max) {
-  size_t len = strlen(FAKE_BYTES);
-  strncpy(buf, FAKE_BYTES, len);
-  return (ssize_t)len;
+TEST(peer_reconnections_reuse) {
+  init("8080");
+  read_fake.custom_fake = custom_fake_read;
+  epoll_cb *cb = alloc_cb(10);
+  accept_fake.return_val = 11;
+  cb = accept_peer(cb);
+  FAKE_BYTES = "peers,8081";
+  peer_EPOLLIN(cb);
+  char *retval[] = {hash_getk(peers, "8081")};
+  rand_select_fake.return_val = (void **)retval;
+  peer_reconnect(nullptr);
+  ASSERT_EQ(2, free_fake.call_count);
+  ASSERT_EQ(0, connect_fake.call_count);
+  ASSERT_EQ(1, (int)peers->len);
+  PD *pd = hash_getv(peers, "8081");
+  ASSERT_EQ(11, pd->fd);
 }
 
 void peer_test_run(void) {
@@ -151,6 +164,13 @@ void peer_test_run(void) {
   RUN_TEST(peer_add_success_case);
   RUN_TEST(peer_multiple_add);
   RUN_TEST(peer_double_connection);
-  RUN_TEST(peer_reconnections);
+  RUN_TEST(peer_reconnections_new);
+  RUN_TEST(peer_reconnections_reuse);
   RUN_TEST(peer_gossip);
+}
+
+ssize_t custom_fake_read(int fd, void *buf, size_t max) {
+  size_t len = strlen(FAKE_BYTES);
+  strncpy(buf, FAKE_BYTES, len);
+  return (ssize_t)len;
 }
