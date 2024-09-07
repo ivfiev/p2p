@@ -8,10 +8,10 @@ aliases() {
 
 start_p2p() {
     arg="peers,nc"
-    for i in {0..9}
+    for i in {0..19}
     do
         port=$((8080 + i))
-        ./p2p "$port" & # --logs 1065 &
+        ./p2p "$port" --logs 1065 &
         echo "Started p2p instance on port $port"
         arg="$arg,$port"
     done
@@ -26,14 +26,15 @@ kill_p2p() {
     echo "Killed all p2p instances"
 }
 
-if [ "$1" != "-a" ] && [ -d "bin" ]; then
-    cd bin || exit
+if [ "$1" != "-a" ] && [ -d "build" ]; then
+    cd build || exit
     echo "Changed directory to bin"
 fi
 
 if [ "$1" == "-a" ]; then 
     aliases
 elif [ "$1" == "-u" ]; then
+    sleep 2
     start_p2p $2
 elif [ "$1" == "-d" ]; then
     kill_p2p

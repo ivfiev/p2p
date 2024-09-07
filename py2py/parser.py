@@ -32,6 +32,7 @@ def run():
         lines = read_lines()
         for line in lines:
             if '<END_OF_SESSION>' in line:
+                graph = dict()
                 times = dict()
             elif 'ERROR' in line:
                 errors.append(line)
