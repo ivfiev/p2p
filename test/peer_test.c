@@ -62,6 +62,7 @@ TEST(peer_multiple_add) {
     pd = hash_getv(peers, keys[i]);
     ASSERT_PTR_EQ(NULL, pd);
   }
+  ASSERT_STR_EQ("8084", (char *)hash_getk(peers, "8084"));
 }
 
 TEST(peer_double_connection) {
