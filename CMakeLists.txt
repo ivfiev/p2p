@@ -15,6 +15,7 @@ add_executable(p2p
         src/log.c
         src/hashtable.c
         src/utils.c
+        src/app.c
 )
 
 target_link_libraries(p2p m)

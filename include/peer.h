@@ -3,6 +3,13 @@
 
 #include "cb.h"
 
+typedef struct peer_message {
+  char *cmd;
+  char **args;
+  int argc;
+  epoll_cb *cb;
+} peer_msg;
+
 typedef struct peer_descriptor {
   int fd;
   epoll_cb *cb;

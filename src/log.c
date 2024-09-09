@@ -79,7 +79,22 @@ void reset_reconnect(epoll_cb *cb) {
   log_data->reconnect = true;
 }
 
-void init_log(char *port) {
+int init_log() {
+  char *level = getenv("P2P_LOG_LEVEL");
+  if (level == NULL) {
+    return -1;
+  }
+  if (!strcmp(level, "1")) {
+    LOG_LEVEL = 1;
+  } else if (!strcmp(level, "2")) {
+    LOG_LEVEL = 2;
+  } else {
+    return -1;
+  }
+  char *port = getenv("P2P_LOG_PORT");
+  if (port == NULL) {
+    return -1;
+  }
   int stdout_fd = dup(STDOUT_FILENO);
   int stderr_fd = dup(STDERR_FILENO);
   int rw_fd[2];
@@ -106,15 +121,7 @@ void init_log(char *port) {
   epoll_ctl(EPFD, EPOLL_CTL_ADD, rw_fd[0], &cb->event);
 
   timer(5000, reset_reconnect, data);
-
-  char *level = getenv("P2P_LOG_LEVEL");
-  if (level != NULL) {
-    if (!strcmp(level, "1")) {
-      LOG_LEVEL = 1;
-    } else if (!strcmp(level, "2")) {
-      LOG_LEVEL = 2;
-    }
-  }
+  return 0;
 }
 
 void err_fatal(const char *format, ...) {

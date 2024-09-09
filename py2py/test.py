@@ -19,6 +19,7 @@ def teardown():
 def happy_path(nodes):
     global processes
     environ['P2P_LOG_LEVEL'] = '1'
+    environ['P2P_LOG_PORT'] = '1065'
     log_server = subprocess.Popen(['python', 'server.py'], stdout=subprocess.PIPE, text=True)
     log_parser = subprocess.Popen(['python', 'parser.py'], stdin=log_server.stdout, stdout=subprocess.PIPE, text=True)
     processes = [log_server, log_parser]

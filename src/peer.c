@@ -18,70 +18,71 @@ char *NAME;
 hashtable *peers;
 const int tick_ms = 500;
 
+void (*handle_peer_msg)(peer_msg);
+
+void (*handle_new_peers)(void);
+
 epoll_cb *init_peer(int fd);
 
 static PD *get_pd(int fd, epoll_cb *cb);
 
 static void clear_pd(PD *pd);
 
-void exec_cmd(char *cmd, char **args, int argc, epoll_cb *cb) {
-  for (int i = 0; i < argc; i++) {
-    trim_end(args[i]);
-  }
-  if (!strcmp(cmd, "debug")) {
-    if (!strcmp(args[0], "conn")) {
+void exec_cmd(peer_msg msg) {
+  if (!strcmp(msg.cmd, "debug")) {
+    if (!strcmp(msg.args[0], "conn")) {
       log_debug("connecting...");
-      int fd = connect1(args[1]);
+      int fd = connect1(msg.args[1]);
       epoll_cb *peer_cb = init_peer(fd);
       if (peer_cb != NULL) {
-        char *peer_name = strdup(args[1]); // just a debug cmd, so it's fine to alloc.
+        char *peer_name = strdup(msg.args[1]); // just a debug cmd, so it's fine to alloc.
         peer_cb->data = peer_name;
         PD *pd = get_pd(fd, peer_cb);
         hash_set(peers, peer_name, pd);
       }
-    } else if (!strcmp(args[0], "close")) {
-      PD *pd = hash_getv(peers, args[1]);
+    } else if (!strcmp(msg.args[0], "close")) {
+      PD *pd = hash_getv(peers, msg.args[1]);
       log_debug("disconnecting fd [%d] ...", pd->fd);
       close1(pd->cb);
       clear_pd(pd);
-    } else if (!strcmp(args[0], "fail")) {
+    } else if (!strcmp(msg.args[0], "fail")) {
       int *x = malloc(sizeof(int));
       free(x);
       free(x);
     }
-  } else if (!strcmp(cmd, "peers")) {
-    if (strcmp(args[0], "nc") != 0 && strcmp(args[0], NAME) != 0) {
-      char *peer_name = hash_getk(peers, args[0]);
+  } else if (!strcmp(msg.cmd, "peers")) {
+    if (strcmp(msg.args[0], "nc") != 0 && strcmp(msg.args[0], NAME) != 0) {
+      char *peer_name = hash_getk(peers, msg.args[0]);
       if (peer_name == NULL) {
-        peer_name = strdup(args[0]);
+        peer_name = strdup(msg.args[0]);
       }
-      if (cb->data == NULL) {
-        cb->data = peer_name;
+      if (msg.cb->data == NULL) {
+        msg.cb->data = peer_name;
       }
       PD *pd = hash_getv(peers, peer_name);
       if (pd == NULL) {
-        pd = get_pd(cb->fd, cb);
+        pd = get_pd(msg.cb->fd, msg.cb);
       } else if (pd->fd <= 0) {
-        pd->fd = cb->fd;
-        pd->cb = cb;
-      } else if (pd->fd != cb->fd) {
+        pd->fd = msg.cb->fd;
+        pd->cb = msg.cb;
+      } else if (pd->fd != msg.cb->fd) {
         if (strcmp(NAME, peer_name) < 0) {
           log_debug("double connection to %s, closing my end...", peer_name);
           close1(pd->cb);
           clear_pd(pd);
-          pd->fd = cb->fd;
-          pd->cb = cb;
+          pd->fd = msg.cb->fd;
+          pd->cb = msg.cb;
         }
       }
       hash_set(peers, peer_name, pd);
     }
-    for (int i = 1; i < argc; i++) {
-      if (!strcmp(NAME, args[i]) || !strcmp(args[0], args[i])) {
+    for (int i = 1; i < msg.argc; i++) {
+      if (!strcmp(NAME, msg.args[i]) || !strcmp(msg.args[0], msg.args[i])) {
         continue;
       }
-      char *existing = (char *)hash_getk(peers, args[i]);
+      char *existing = (char *)hash_getk(peers, msg.args[i]);
       if (existing == NULL) {
-        existing = strdup(args[i]);
+        existing = strdup(msg.args[i]);
         hash_set(peers, existing, NULL);
       }
     }
@@ -101,13 +102,15 @@ void peer_EPOLLIN(epoll_cb *cb) {
     return;
   }
   buf[bytes] = 0;
+  trim_end(buf);
   cmd = strtok_r(buf, delim_cmd, &cmd_r);
   while (cmd != NULL) {
     toks[0] = strtok(buf, delim_tok);
     for (i = 1; toks[i - 1]; i++) {
       toks[i] = strtok(NULL, delim_tok);
     }
-    exec_cmd(toks[0], toks + 1, i == 1 ? 0 : i - 2, cb);
+    peer_msg msg = {toks[0], toks + 1, i == 1 ? 0 : i - 2, cb};
+    exec_cmd(msg);
     cmd = strtok_r(NULL, delim_cmd, &cmd_r);
   }
 }

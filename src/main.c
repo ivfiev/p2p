@@ -12,7 +12,7 @@ int EPFD;
 
 void init(char *port);
 
-void init_log(char *port);
+int init_log();
 
 int is_timer(int fd);
 
@@ -35,8 +35,7 @@ int main(int argc, char **argv) {
 
   EPFD = epoll_create1(EPOLL_CLOEXEC);
 
-  if (argc > 2 && !strcmp(argv[2], "--logs") && argv[3]) {
-    init_log(argv[3]);
+  if (!init_log()) {
     init_logs_flush();
   }
 
