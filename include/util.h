@@ -13,4 +13,14 @@ void **rand_select(void **elems, size_t len, size_t k);
 
 void timestamp(char *);
 
+size_t strsplit(char *str, const char *sep, char **buf);
+
+size_t hash_int(void *ptr, size_t N);
+
+size_t hash_str(void *ptr, size_t N);
+
+size_t hash_strs(void **ptr, size_t count, size_t N);
+
+int intcmp(int i, int j);
+
 #endif //P2P_UTIL_H

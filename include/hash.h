@@ -19,12 +19,6 @@ typedef struct hashtable {
   size_t (*hash)(void *ptr, size_t N);
 } hashtable;
 
-size_t hash_int(void *ptr, size_t N);
-
-size_t hash_str(void *ptr, size_t N);
-
-int intcmp(int, int);
-
 hashtable *hash_new(size_t cap, size_t (*hash)(void *ptr, size_t N), int (*cmp)(void *k1, void *k2));
 
 void *hash_set(hashtable *ht, void *k, void *v);
