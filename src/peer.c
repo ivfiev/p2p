@@ -86,15 +86,16 @@ void exec_cmd(peer_msg msg) {
         hash_set(peers, existing, NULL);
       }
     }
+  } else if (handle_peer_msg != NULL) {
+    handle_peer_msg(msg);
   }
 }
 
 void peer_EPOLLIN(epoll_cb *cb) {
-  char *cmd, *cmd_r = NULL;
   char *toks[1024];
+  char *cmds[128];
   const char *delim_tok = ",";
   const char *delim_cmd = "\0";
-  int i;
   char buf[BUF_SIZE];
   ssize_t bytes = read2(cb, buf);
   if (bytes < 0) {
@@ -102,16 +103,12 @@ void peer_EPOLLIN(epoll_cb *cb) {
     return;
   }
   buf[bytes] = 0;
-  trim_end(buf);
-  cmd = strtok_r(buf, delim_cmd, &cmd_r);
-  while (cmd != NULL) {
-    toks[0] = strtok(buf, delim_tok);
-    for (i = 1; toks[i - 1]; i++) {
-      toks[i] = strtok(NULL, delim_tok);
-    }
-    peer_msg msg = {toks[0], toks + 1, i == 1 ? 0 : i - 2, cb};
+  trim_end(buf + bytes - 1);
+  size_t cmd_c = strsplit(buf, delim_cmd, cmds);
+  for (int c = 0; c < cmd_c; c++) {
+    size_t tok_c = strsplit(cmds[c], delim_tok, toks);
+    peer_msg msg = {toks[0], toks + 1, (int)tok_c - 1, cb};
     exec_cmd(msg);
-    cmd = strtok_r(NULL, delim_cmd, &cmd_r);
   }
 }
 
@@ -185,6 +182,9 @@ void peer_reconnect(epoll_cb *cb) {
   }
   free(new);
   free(keys);
+  if (handle_new_peers != NULL) {
+    handle_new_peers();
+  }
 }
 
 void peer_tick(epoll_cb *cb) {
@@ -254,4 +254,13 @@ static PD *get_pd(int fd, epoll_cb *cb) {
 
 static void clear_pd(PD *pd) {
   memset(pd, 0, sizeof(PD));
+}
+
+void set_handlers(void (*handle_msg)(peer_msg), void (*handle_peers)(void)) {
+  handle_peer_msg = handle_msg;
+  handle_new_peers = handle_peers;
+}
+
+void broadcast(peer_msg msg) {
+
 }

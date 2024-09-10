@@ -2,6 +2,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <unistd.h>
+#include "util.h"
 #include "hash.h"
 #include "log.h"
 #include "cb.h"

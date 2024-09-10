@@ -14,6 +14,8 @@ void init(char *port);
 
 int init_log();
 
+int init_app();
+
 int is_timer(int fd);
 
 void on_error(epoll_cb *cb);
@@ -39,6 +41,7 @@ int main(int argc, char **argv) {
     init_logs_flush();
   }
 
+  init_app();
   init(argv[1]);
 
   for (;;) {
