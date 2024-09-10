@@ -8,6 +8,7 @@ add_executable(p2p_tests
         ../src/log.c
         ../src/hashtable.c
         ../src/utils.c
+        ../src/app.c
         tests.c
         test.h
         fff.h
@@ -17,6 +18,8 @@ add_executable(p2p_tests
         fakes.c
         log_test.c
         peer_test.c
+        util_test.c
+        app_test.c
 )
 
 target_link_libraries(p2p_tests m)
