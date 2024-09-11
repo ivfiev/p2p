@@ -7,7 +7,6 @@ typedef struct peer_message {
   char *cmd;
   char **args;
   int argc;
-  epoll_cb *cb;
 } peer_msg;
 
 typedef struct peer_descriptor {
@@ -17,7 +16,9 @@ typedef struct peer_descriptor {
 
 void peer_reconnect(epoll_cb *cb); // timer cb
 
-void set_handlers(void (*handle_msg)(peer_msg), void (*handle_peers)(void));
+void set_handlers(void (*handle_msg)(char *, peer_msg));
+
+void reply(char *name, peer_msg);
 
 void broadcast(peer_msg);
 

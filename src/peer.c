@@ -18,7 +18,7 @@ char *NAME;
 hashtable *peers;
 const int tick_ms = 500;
 
-void (*handle_peer_msg)(peer_msg);
+void (*handle_peer_msg)(char *, peer_msg);
 
 void (*handle_new_peers)(void);
 
@@ -28,7 +28,7 @@ static PD *get_pd(int fd, epoll_cb *cb);
 
 static void clear_pd(PD *pd);
 
-void exec_cmd(peer_msg msg) {
+void exec_cmd(peer_msg msg, epoll_cb *cb) {
   if (!strcmp(msg.cmd, "debug")) {
     if (!strcmp(msg.args[0], "conn")) {
       log_debug("connecting...");
@@ -56,22 +56,22 @@ void exec_cmd(peer_msg msg) {
       if (peer_name == NULL) {
         peer_name = strdup(msg.args[0]);
       }
-      if (msg.cb->data == NULL) {
-        msg.cb->data = peer_name;
+      if (cb->data == NULL) {
+        cb->data = peer_name;
       }
       PD *pd = hash_getv(peers, peer_name);
       if (pd == NULL) {
-        pd = get_pd(msg.cb->fd, msg.cb);
+        pd = get_pd(cb->fd, cb);
       } else if (pd->fd <= 0) {
-        pd->fd = msg.cb->fd;
-        pd->cb = msg.cb;
-      } else if (pd->fd != msg.cb->fd) {
+        pd->fd = cb->fd;
+        pd->cb = cb;
+      } else if (pd->fd != cb->fd) {
         if (strcmp(NAME, peer_name) < 0) {
           log_debug("double connection to %s, closing my end...", peer_name);
           close1(pd->cb);
           clear_pd(pd);
-          pd->fd = msg.cb->fd;
-          pd->cb = msg.cb;
+          pd->fd = cb->fd;
+          pd->cb = cb;
         }
       }
       hash_set(peers, peer_name, pd);
@@ -87,7 +87,7 @@ void exec_cmd(peer_msg msg) {
       }
     }
   } else if (handle_peer_msg != NULL) {
-    handle_peer_msg(msg);
+    handle_peer_msg(cb->data, msg);
   }
 }
 
@@ -107,8 +107,8 @@ void peer_EPOLLIN(epoll_cb *cb) {
   size_t cmd_c = strsplit(buf, delim_cmd, cmds);
   for (int c = 0; c < cmd_c; c++) {
     size_t tok_c = strsplit(cmds[c], delim_tok, toks);
-    peer_msg msg = {toks[0], toks + 1, (int)tok_c - 1, cb};
-    exec_cmd(msg);
+    peer_msg msg = {toks[0], toks + 1, (int)tok_c - 1};
+    exec_cmd(msg, cb);
   }
 }
 
@@ -256,11 +256,37 @@ static void clear_pd(PD *pd) {
   memset(pd, 0, sizeof(PD));
 }
 
-void set_handlers(void (*handle_msg)(peer_msg), void (*handle_peers)(void)) {
+void set_handlers(void (*handle_msg)(char *, peer_msg)) {
   handle_peer_msg = handle_msg;
-  handle_new_peers = handle_peers;
+}
+
+size_t pack_msg(peer_msg msg, char *buf) {
+  char *ptr = buf;
+  ptr += snprintf(ptr, 16, "%s", msg.cmd);
+  for (int i = 0; i < msg.argc; i++) {
+    ptr += snprintf(ptr, BUF_SIZE / 2, ",%s", msg.args[i]);
+  }
+  return ptr - buf;
+}
+
+void reply(char *name, peer_msg msg) {
+  char buf[BUF_SIZE];
+  PD *pd = hash_getv(peers, name);
+  if (pd != NULL && pd->fd > 0) {
+    size_t size = pack_msg(msg, buf);
+    write(pd->fd, buf, size);
+  }
 }
 
 void broadcast(peer_msg msg) {
-
+  char buf[BUF_SIZE];
+  size_t size = pack_msg(msg, buf);
+  char **keys = (char **)hash_keys(peers);
+  for (int i = 0; i < peers->len; i++) {
+    PD *pd = hash_getv(peers, keys[i]);
+    if (pd != NULL && pd->fd > 0) {
+      write(pd->fd, buf, size);
+    }
+  }
+  free(keys);
 }

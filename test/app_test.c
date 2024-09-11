@@ -3,35 +3,42 @@
 #include "peer.h"
 #include "test.h"
 #include "util.h"
+#include "fakes.h"
 
 extern size_t COUNT;
 extern char *TEXT[];
 extern int HASH;
 
-void handle_msg(peer_msg msg);
+void handle_msg(char *name, peer_msg msg);
+
+void on_tick(epoll_cb *);
 
 void reset(void);
 
-peer_msg get_msg(char *, int, char *, epoll_cb *);
+peer_msg get_msg(char *, int, char *);
 
 TEST(add_new_text) {
   reset();
   char test[] = "line1\nline2\n";
-  peer_msg msg = get_msg("lines", 1, test, NULL);
-  handle_msg(msg);
-  ASSERT(HASH > 0);
+  peer_msg msg = get_msg("text", 326757776, test);
+  handle_msg("8081", msg);
+  ASSERT_EQ(326757776, HASH);
   ASSERT_EQ(2, (int)COUNT);
   ASSERT_STR_EQ("line1", TEXT[0]);
   ASSERT_STR_EQ("line2", TEXT[1]);
+  ASSERT_EQ(0, write_fake.call_count);
+  ASSERT_EQ(0, free_fake.call_count);
 }
 
 TEST(equal_hashes) {
   reset();
   char test[] = "line1\nline2\n";
-  peer_msg msg = get_msg("lines", 8, test, NULL);
+  peer_msg msg = get_msg("text", 8, test);
   HASH = 8;
-  handle_msg(msg);
+  handle_msg("8081", msg);
   ASSERT_EQ(0, (int)COUNT);
+  ASSERT_EQ(0, write_fake.call_count);
+  ASSERT_EQ(0, free_fake.call_count);
 }
 
 TEST(merge_input) {
@@ -40,20 +47,45 @@ TEST(merge_input) {
   TEXT[0] = "line1";
   TEXT[1] = "line3";
   char test[] = "line2\nline4\n";
-  peer_msg msg = get_msg("lines", 1, test, NULL);
-  handle_msg(msg);
+  peer_msg msg = get_msg("text", 1, test);
+  handle_msg("8081", msg);
   ASSERT(HASH > 1);
   ASSERT_EQ(4, (int)COUNT);
   ASSERT_STR_EQ("line1", TEXT[0]);
   ASSERT_STR_EQ("line2", TEXT[1]);
   ASSERT_STR_EQ("line3", TEXT[2]);
   ASSERT_STR_EQ("line4", TEXT[3]);
+  ASSERT_EQ(1, write_fake.call_count);
+  ASSERT_EQ(11, write_fake.arg0_val);
+  ASSERT_EQ(3, free_fake.call_count);
+}
+
+TEST(hash_msg) {
+  reset();
+  COUNT = 1;
+  TEXT[0] = "line1";
+  peer_msg msg = get_msg("hash", 1, NULL);
+  handle_msg("8081", msg);
+  ASSERT_EQ(1, write_fake.call_count);
+  ASSERT_EQ(11, write_fake.arg0_val);
+  ASSERT_EQ(3, free_fake.call_count);
+}
+
+TEST(hash_broadcast) {
+  reset();
+  COUNT = 1;
+  TEXT[0] = "line1";
+  on_tick(NULL);
+  ASSERT(write_fake.call_count > 0);
+  ASSERT_EQ(3, free_fake.call_count);
 }
 
 void app_test_run(void) {
   RUN_TEST(add_new_text);
   RUN_TEST(equal_hashes);
   RUN_TEST(merge_input);
+  RUN_TEST(hash_msg);
+  RUN_TEST(hash_broadcast);
 }
 
 void reset(void) {
@@ -63,12 +95,12 @@ void reset(void) {
   COUNT = HASH = 0;
 }
 
-peer_msg get_msg(char *cmd, int h, char *test_input, epoll_cb *cb) {
+peer_msg get_msg(char *cmd, int h, char *test_input) {
   char *h_str = malloc(16);
   snprintf(h_str, 15, "%d", h);
   char **args = calloc(2, sizeof(char *));
   args[0] = h_str;
   args[1] = test_input;
-  peer_msg msg = {cmd, args, 2, cb};
+  peer_msg msg = {cmd, args, 1 + (test_input != NULL)};
   return msg;
 }

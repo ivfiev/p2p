@@ -1,59 +1,79 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "peer.h"
 #include "hash.h"
 #include "util.h"
 
-#define MAX_LINES 4096
+#define MAX_LINES 256
+#define BUF_SIZE 4096
 
 size_t COUNT;
 char *TEXT[MAX_LINES];
 int HASH;
 
-void handle_hash_msg(peer_msg msg) {
+static peer_msg pack_hash_msg(void);
 
-}
+static peer_msg pack_text_msg(void);
 
-void handle_lines_msg(peer_msg msg) {
-  int h = atoi(msg.args[0]);
-  char *tmp[MAX_LINES];
-  char *msg_lines[MAX_LINES];
-  int i, j, k;
-  if (h == HASH) {
+static void free_msg(peer_msg);
+
+void handle_hash_msg(char *name, peer_msg msg) {
+  int msg_hash = atoi(msg.args[0]);
+  if (msg_hash == HASH) {
     return;
   }
-  size_t lines_len = strsplit(msg.args[1], "\n", msg_lines);
-  qsort(msg_lines, lines_len, sizeof(char *), (__compar_fn_t)strcmp);
+  peer_msg reply_msg = pack_text_msg();
+  reply(name, reply_msg);
+  free_msg(reply_msg);
+}
+
+void handle_text_msg(char *name, peer_msg msg) {
+  int msg_hash = atoi(msg.args[0]);
+  char *tmp[MAX_LINES];
+  char *msg_text[MAX_LINES];
+  int i, j, k;
+  if (msg_hash == HASH) {
+    return;
+  }
+  size_t lines_len = strsplit(msg.args[1], "\n", msg_text);
+  qsort(msg_text, lines_len, sizeof(char *), (__compar_fn_t)strcmp);
   for (i = j = k = 0; k < MAX_LINES && (i < COUNT || j < lines_len); k++) {
     if (j == lines_len) {
       tmp[k] = TEXT[i++];
     } else if (i == COUNT) {
-      tmp[k] = strdup(msg_lines[j++]);
+      tmp[k] = strdup(msg_text[j++]);
     } else {
-      int cmp = strcmp(TEXT[i], msg_lines[j]);
+      int cmp = strcmp(TEXT[i], msg_text[j]);
       if (cmp <= 0) {
         tmp[k] = TEXT[i++];
       } else {
-        tmp[k] = strdup(msg_lines[j++]);
+        tmp[k] = strdup(msg_text[j++]);
       }
     }
   }
   COUNT = k;
   memcpy(TEXT, tmp, COUNT * sizeof(char *));
   HASH = (int)hash_strs((void **)TEXT, COUNT, 1000000007);
-}
-
-void handle_msg(peer_msg msg) {
-  if (!strcmp("hash", msg.cmd)) {
-    handle_hash_msg(msg);
-  } else if (!strcmp("lines", msg.cmd)) {
-    handle_lines_msg(msg);
+  if (HASH != msg_hash) {
+    peer_msg reply_msg = pack_text_msg();
+    reply(name, reply_msg);
+    free_msg(reply_msg);
   }
 }
 
-void handle_peers(void) {
-  peer_msg msg = {};
+void handle_msg(char *name, peer_msg msg) {
+  if (!strcmp("hash", msg.cmd)) {
+    handle_hash_msg(name, msg);
+  } else if (!strcmp("text", msg.cmd)) {
+    handle_text_msg(name, msg);
+  }
+}
+
+void on_tick(epoll_cb *cb) {
+  peer_msg msg = pack_hash_msg();
   broadcast(msg);
+  free_msg(msg);
 }
 
 int init_app(void) {
@@ -61,6 +81,38 @@ int init_app(void) {
   if (app == NULL || strcmp(app, "1") != 0) {
     return -1;
   }
-  set_handlers(handle_msg, handle_peers);
+  set_handlers(handle_msg);
+  timer(250, on_tick, NULL);
   return 0;
+}
+
+static peer_msg pack_hash_msg(void) {
+  char **args = (char **)calloc(1, sizeof(char *));
+  char *hash = malloc(16);
+  snprintf(hash, 15, "%d", HASH);
+  args[0] = hash;
+  peer_msg msg = {"hash", args, 1};
+  return msg;
+}
+
+static peer_msg pack_text_msg(void) {
+  char **args = (char **)calloc(1, sizeof(char *));
+  char *hash = malloc(16);
+  char *text = malloc(BUF_SIZE);
+  char *ptr = text;
+  snprintf(hash, 15, "%d", HASH);
+  for (int i = 0; i < COUNT; i++) {
+    ptr += snprintf(ptr, BUF_SIZE, "%s\n", TEXT[i]);
+  }
+  args[0] = hash;
+  args[1] = text;
+  peer_msg msg = {"text", args, 2};
+  return msg;
+}
+
+static void free_msg(peer_msg msg) {
+  for (int i = 0; i < msg.argc; i++) {
+    free(msg.args[i]);
+  }
+  free(msg.args);
 }
