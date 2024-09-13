@@ -4,6 +4,7 @@
 #include "peer.h"
 #include "hash.h"
 #include "util.h"
+#include "log.h"
 
 #define MAX_LINES 256
 #define BUF_SIZE 4096
@@ -47,6 +48,7 @@ void handle_text_msg(char *name, peer_msg msg) {
       int cmp = strcmp(TEXT[i], msg_text[j]);
       if (cmp <= 0) {
         tmp[k] = TEXT[i++];
+        j += !cmp;
       } else {
         tmp[k] = strdup(msg_text[j++]);
       }
@@ -55,7 +57,7 @@ void handle_text_msg(char *name, peer_msg msg) {
   COUNT = k;
   memcpy(TEXT, tmp, COUNT * sizeof(char *));
   HASH = (int)hash_strs((void **)TEXT, COUNT, 1000000007);
-  if (HASH != msg_hash) {
+  if (HASH != msg_hash && name != NULL) { // NULL for nc
     peer_msg reply_msg = pack_text_msg();
     reply(name, reply_msg);
     free_msg(reply_msg);
@@ -70,7 +72,15 @@ void handle_msg(char *name, peer_msg msg) {
   }
 }
 
+static void log_stats(void) {
+  log_info("TEXT:");
+  for (int i = 0; i < COUNT; i++) {
+    log_info("%s", TEXT[i]);
+  }
+}
+
 void on_tick(epoll_cb *cb) {
+  log_stats();
   peer_msg msg = pack_hash_msg();
   broadcast(msg);
   free_msg(msg);
@@ -82,7 +92,7 @@ int init_app(void) {
     return -1;
   }
   set_handlers(handle_msg);
-  timer(250, on_tick, NULL);
+  timer(1000, on_tick, NULL);
   return 0;
 }
 

@@ -60,6 +60,24 @@ TEST(merge_input) {
   ASSERT_EQ(3, free_fake.call_count);
 }
 
+TEST(overlapping_lists) {
+  reset();
+  COUNT = 2;
+  TEXT[0] = "line1";
+  TEXT[1] = "line2";
+  char test[] = "line0\nline2\n";
+  peer_msg msg = get_msg("text", 1, test);
+  handle_msg("8081", msg);
+  ASSERT(HASH > 1);
+  ASSERT_EQ(3, (int)COUNT);
+  ASSERT_STR_EQ("line0", TEXT[0]);
+  ASSERT_STR_EQ("line1", TEXT[1]);
+  ASSERT_STR_EQ("line2", TEXT[2]);
+  ASSERT_EQ(1, write_fake.call_count);
+  ASSERT_EQ(11, write_fake.arg0_val);
+  ASSERT_EQ(3, free_fake.call_count);
+}
+
 TEST(hash_msg) {
   reset();
   COUNT = 1;
@@ -84,6 +102,7 @@ void app_test_run(void) {
   RUN_TEST(add_new_text);
   RUN_TEST(equal_hashes);
   RUN_TEST(merge_input);
+  RUN_TEST(overlapping_lists);
   RUN_TEST(hash_msg);
   RUN_TEST(hash_broadcast);
 }

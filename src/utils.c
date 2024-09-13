@@ -22,9 +22,6 @@ int intcmp(int i, int j) {
 }
 
 size_t hash_str(void *ptr, size_t N) {
-  if (ptr == NULL || N == 0) {
-    return 0;
-  }
   size_t i = 0;
   char *str = ptr;
   char c;
