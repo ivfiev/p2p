@@ -19,17 +19,17 @@ static peer_msg pack_text_msg(void);
 
 static void free_msg(peer_msg);
 
-void handle_hash_msg(char *name, peer_msg msg) {
+void handle_hash_msg(int fd, peer_msg msg) {
   int msg_hash = atoi(msg.args[0]);
   if (msg_hash == HASH) {
     return;
   }
   peer_msg reply_msg = pack_text_msg();
-  reply(name, reply_msg);
+  reply(fd, reply_msg);
   free_msg(reply_msg);
 }
 
-void handle_text_msg(char *name, peer_msg msg) {
+void handle_text_msg(int fd, peer_msg msg) {
   int msg_hash = atoi(msg.args[0]);
   char *tmp[MAX_LINES];
   char *msg_text[MAX_LINES];
@@ -57,18 +57,18 @@ void handle_text_msg(char *name, peer_msg msg) {
   COUNT = k;
   memcpy(TEXT, tmp, COUNT * sizeof(char *));
   HASH = (int)hash_strs((void **)TEXT, COUNT, 1000000007);
-  if (HASH != msg_hash && name != NULL) { // NULL for nc
+  if (HASH != msg_hash) {
     peer_msg reply_msg = pack_text_msg();
-    reply(name, reply_msg);
+    reply(fd, reply_msg);
     free_msg(reply_msg);
   }
 }
 
-void handle_msg(char *name, peer_msg msg) {
+void handle_msg(int fd, peer_msg msg) {
   if (!strcmp("hash", msg.cmd)) {
-    handle_hash_msg(name, msg);
+    handle_hash_msg(fd, msg);
   } else if (!strcmp("text", msg.cmd)) {
-    handle_text_msg(name, msg);
+    handle_text_msg(fd, msg);
   }
 }
 

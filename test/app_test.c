@@ -9,7 +9,7 @@ extern size_t COUNT;
 extern char *TEXT[];
 extern int HASH;
 
-void handle_msg(char *name, peer_msg msg);
+void handle_msg(int, peer_msg msg);
 
 void on_tick(epoll_cb *);
 
@@ -21,7 +21,7 @@ TEST(add_new_text) {
   reset();
   char test[] = "line1\nline2\n";
   peer_msg msg = get_msg("text", 326757776, test);
-  handle_msg("8081", msg);
+  handle_msg(11, msg);
   ASSERT_EQ(326757776, HASH);
   ASSERT_EQ(2, (int)COUNT);
   ASSERT_STR_EQ("line1", TEXT[0]);
@@ -35,7 +35,7 @@ TEST(equal_hashes) {
   char test[] = "line1\nline2\n";
   peer_msg msg = get_msg("text", 8, test);
   HASH = 8;
-  handle_msg("8081", msg);
+  handle_msg(11, msg);
   ASSERT_EQ(0, (int)COUNT);
   ASSERT_EQ(0, write_fake.call_count);
   ASSERT_EQ(0, free_fake.call_count);
@@ -48,7 +48,7 @@ TEST(merge_input) {
   TEXT[1] = "line3";
   char test[] = "line2\nline4\n";
   peer_msg msg = get_msg("text", 1, test);
-  handle_msg("8081", msg);
+  handle_msg(11, msg);
   ASSERT(HASH > 1);
   ASSERT_EQ(4, (int)COUNT);
   ASSERT_STR_EQ("line1", TEXT[0]);
@@ -67,7 +67,7 @@ TEST(overlapping_lists) {
   TEXT[1] = "line2";
   char test[] = "line0\nline2\n";
   peer_msg msg = get_msg("text", 1, test);
-  handle_msg("8081", msg);
+  handle_msg(11, msg);
   ASSERT(HASH > 1);
   ASSERT_EQ(3, (int)COUNT);
   ASSERT_STR_EQ("line0", TEXT[0]);
@@ -83,7 +83,7 @@ TEST(hash_msg) {
   COUNT = 1;
   TEXT[0] = "line1";
   peer_msg msg = get_msg("hash", 1, NULL);
-  handle_msg("8081", msg);
+  handle_msg(11, msg);
   ASSERT_EQ(1, write_fake.call_count);
   ASSERT_EQ(11, write_fake.arg0_val);
   ASSERT_EQ(3, free_fake.call_count);

@@ -18,7 +18,7 @@ char *NAME;
 hashtable *peers;
 const int tick_ms = 500;
 
-void (*handle_peer_msg)(char *, peer_msg);
+void (*handle_peer_msg)(int, peer_msg);
 
 void (*handle_new_peers)(void);
 
@@ -87,7 +87,7 @@ void exec_cmd(peer_msg msg, epoll_cb *cb) {
       }
     }
   } else if (handle_peer_msg != NULL) {
-    handle_peer_msg(cb->data, msg);
+    handle_peer_msg(cb->fd, msg);
   }
 }
 
@@ -256,7 +256,7 @@ static void clear_pd(PD *pd) {
   memset(pd, 0, sizeof(PD));
 }
 
-void set_handlers(void (*handle_msg)(char *, peer_msg)) {
+void set_handlers(void (*handle_msg)(int, peer_msg)) {
   handle_peer_msg = handle_msg;
 }
 
@@ -269,13 +269,10 @@ size_t pack_msg(peer_msg msg, char *buf) {
   return ptr - buf;
 }
 
-void reply(char *name, peer_msg msg) {
+void reply(int fd, peer_msg msg) {
   char buf[BUF_SIZE];
-  PD *pd = hash_getv(peers, name);
-  if (pd != NULL && pd->fd > 0) {
-    size_t size = pack_msg(msg, buf);
-    write(pd->fd, buf, size);
-  }
+  size_t size = pack_msg(msg, buf);
+  write(fd, buf, size);
 }
 
 void broadcast(peer_msg msg) {

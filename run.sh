@@ -8,16 +8,18 @@ aliases() {
 
 start_p2p() {
     arg="peers,nc"
-    for i in {0..19}
+    for i in {0..9}
     do
         port=$((8080 + i))
-        ./p2p "$port" --logs 1065 &
+        ./p2p "$port" & # --logs 1065 &
         echo "Started p2p instance on port $port"
         arg="$arg,$port"
     done
     if [ "$1" == "-n" ]; then
         echo "$arg"
-        echo "$arg" | nc localhost 8080
+        echo "$arg" | nc localhost 8080 &
+        echo "text,1,test"
+        echo "text,1,test" | nc localhost 8080 &
     fi
 }
 
@@ -34,7 +36,7 @@ fi
 if [ "$1" == "-a" ]; then 
     aliases
 elif [ "$1" == "-u" ]; then
-    sleep 2
+    sleep 1
     start_p2p $2
 elif [ "$1" == "-d" ]; then
     kill_p2p
