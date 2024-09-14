@@ -1,10 +1,15 @@
 import os
+import select
 import subprocess
 import traceback
-from random import sample, randint
+from datetime import datetime
+from random import sample, randint, random
 from time import sleep
 
-num_nodes = 100
+# for large values - sudo sysctl -w net.netfilter.nf_conntrack_max=1000000
+num_nodes = 1000
+num_neighbors = 20
+num_lines = 5
 
 processes = []
 nodes = []
@@ -31,15 +36,25 @@ def send(node, text):
 
 
 def recv(node):
-    nc = subprocess.Popen(['nc', '-N', 'localhost', node], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
-    nc.stdin.write("hash,1\n")
-    nc.stdin.flush()
-    os.set_blocking(nc.stdout.fileno(), False)
-    sleep(0.02)
-    response = nc.stdout.read()
-    nc.stdin.close()
-    nc.wait()
-    return response
+    try:
+        nc = subprocess.Popen(['nc', '-N', 'localhost', node], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        nc.stdin.write("hash,1\n")
+        nc.stdin.flush()
+        os.set_blocking(nc.stdout.fileno(), False)
+        ok, _, _ = select.select([nc.stdout.fileno()], [], [], 0.01)
+        if ok:
+            response = nc.stdout.read()
+            return response
+        else:
+            print(f'Node {node} failed to respond!')
+            return ''
+    except Exception as e:
+        print(f'Node {node} failed to respond!')
+        traceback.print_exc()
+        return ''
+    finally:
+        nc.stdin.close()
+        nc.wait()
 
 
 def get_text():
@@ -58,24 +73,35 @@ def run():
     for i in range(num_nodes):
         start_node(str(port + i))
     for i in range(len(nodes)):
-        ns = sample(nodes, randint(0, 10))
-        if len(ns) > 0:
+        ns = sample(nodes, randint(0, num_neighbors))
+        if ns:
             peer_msg = f"peers,{nodes[i]},{','.join(ns)}"
             send(nodes[i], peer_msg)
+    print('Started nodes...')
+
     text = get_text()
     for i in range(len(nodes)):
-        n = randint(1, 10)
-        lines = sample(text, n)
-        msg = f"text,1,{'\n'.join(lines)}"
-        node = sample(nodes, 1)[0]
-        send(node, msg)
+        n = randint(0, num_lines)
+        if n:
+            lines = sample(text, n)
+            msg = f"text,1,{'\n'.join(lines)}"
+            node = sample(nodes, 1)[0]
+            send(node, msg)
+    print('Sent text...')
+
     while True:
-        sum = 0.0
+        ratios = []
         for n in nodes:
             ratio = float(recv(n).count('\n')) / float(len(text))
-            sum += ratio
-        ratio = sum / float(len(nodes))
-        print(f'Ratio: {ratio:.5}')
+            ratios.append(ratio)
+        ratios.sort()
+
+        def get_pc(pc):
+            return ratios[int(float(len(ratios)) * float(pc) / 100.0)]
+
+        print(
+            f'{datetime.now().strftime('%H:%M:%S')}'
+            f' - 25th: {get_pc(25):.2}, 50th: {get_pc(50):.2}, 75th: {get_pc(75):.2}, 95th: {get_pc(95):.2}')
         sleep(0.25)
 
 
