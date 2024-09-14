@@ -13,6 +13,7 @@
 #define BUF_SIZE 4096
 
 extern int EPFD;
+extern int LOG_LEVEL;
 
 char *NAME;
 hashtable *peers;
@@ -126,6 +127,9 @@ void disconnect_peer(epoll_cb *cb) {
 }
 
 void log_stats(char **keys, size_t len) {
+  if (LOG_LEVEL < 1) {
+    return;
+  }
   int total = 0, conn = 0;
   char conn_buf[BUF_SIZE], total_buf[BUF_SIZE];
   char *conn_ptr = conn_buf, *total_ptr = total_buf;
