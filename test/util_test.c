@@ -10,9 +10,8 @@ TEST(str_hash_test) {
 }
 
 TEST(str_split_test_commas) {
-  char str[128];
+  char str[] = "hello,world";
   char *buf[16];
-  strcpy(str, "hello,world");
   size_t i = strsplit(str, ",", buf);
   ASSERT_EQ(2, (int)i);
   ASSERT_STR_EQ("hello", buf[0]);
@@ -20,17 +19,24 @@ TEST(str_split_test_commas) {
 }
 
 TEST(str_split_test_newlines) {
-  char str[128];
+  char str[] = "hello\nworld\n\n";
   char *buf[16];
-  strcpy(str, "hello\nworld\n\n");
   size_t i = strsplit(str, "\n", buf);
   ASSERT_EQ(2, (int)i);
   ASSERT_STR_EQ("hello", buf[0]);
   ASSERT_STR_EQ("world", buf[1]);
 }
 
+TEST(str_split_empty_string) {
+  char str[] = "text,0,";
+  char *buf[16];
+  size_t i = strsplit(str, ",", buf);
+  ASSERT_EQ(2, (int)i);
+}
+
 void util_test_run(void) {
   RUN_TEST(str_hash_test);
   RUN_TEST(str_split_test_commas);
   RUN_TEST(str_split_test_newlines);
+  RUN_TEST(str_split_empty_string);
 }

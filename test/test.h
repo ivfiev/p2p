@@ -54,8 +54,8 @@ void reset_fakes();
 #define ASSERT_STR_EQ(expected, actual) do { \
   if (strcmp(expected, actual) != 0) {        \
     FAIL_COUNT++;                            \
-    printf("Assertion failed: %s == %s\n", #expected, #actual); \
-    printf("Expected: %s, Actual: %s\n", (expected), (actual)); \
+    printf("Assertion failed: \"%s\" == \"%s\"\n", #expected, #actual); \
+    printf("Expected: \"%s\", Actual: \"%s\"\n", (expected), (actual)); \
     return; \
   } \
 } while (0)

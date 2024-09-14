@@ -81,10 +81,12 @@ TEST(overlapping_lists) {
 TEST(hash_msg) {
   reset();
   COUNT = 1;
+  HASH = 7;
   TEXT[0] = "line1";
   peer_msg msg = get_msg("hash", 1, NULL);
   handle_msg(11, msg);
   ASSERT_EQ(1, write_fake.call_count);
+  ASSERT_STR_EQ("text,7,line1\n", (char *)write_fake.arg1_val);
   ASSERT_EQ(11, write_fake.arg0_val);
   ASSERT_EQ(3, free_fake.call_count);
 }
@@ -92,10 +94,19 @@ TEST(hash_msg) {
 TEST(hash_broadcast) {
   reset();
   COUNT = 1;
+  HASH = 7;
   TEXT[0] = "line1";
   on_tick(NULL);
   ASSERT(write_fake.call_count > 0);
+  ASSERT_STR_EQ("hash,7", (char *)write_fake.arg1_val);
   ASSERT_EQ(3, free_fake.call_count);
+}
+
+TEST(empty_text) {
+  reset();
+  peer_msg msg = get_msg("hash", 1, NULL);
+  handle_msg(11, msg);
+  ASSERT_STR_EQ("text,0,", (char *)write_fake.arg1_val);
 }
 
 void app_test_run(void) {
@@ -105,6 +116,7 @@ void app_test_run(void) {
   RUN_TEST(overlapping_lists);
   RUN_TEST(hash_msg);
   RUN_TEST(hash_broadcast);
+  RUN_TEST(empty_text);
 }
 
 void reset(void) {

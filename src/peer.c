@@ -103,9 +103,11 @@ void peer_EPOLLIN(epoll_cb *cb) {
     return;
   }
   buf[bytes] = 0;
+  log_debug("processing buf [%s]", buf);
   trim_end(buf + bytes - 1);
   size_t cmd_c = strsplit(buf, delim_cmd, cmds);
   for (int c = 0; c < cmd_c; c++) {
+    log_debug("processing cmd [%s]", cmds[c]);
     size_t tok_c = strsplit(cmds[c], delim_tok, toks);
     peer_msg msg = {toks[0], toks + 1, (int)tok_c - 1};
     exec_cmd(msg, cb);
@@ -266,18 +268,20 @@ size_t pack_msg(peer_msg msg, char *buf) {
   for (int i = 0; i < msg.argc; i++) {
     ptr += snprintf(ptr, BUF_SIZE / 2, ",%s", msg.args[i]);
   }
-  return ptr - buf;
+  return strlen(buf) + 1;
 }
 
 void reply(int fd, peer_msg msg) {
   char buf[BUF_SIZE];
   size_t size = pack_msg(msg, buf);
+  log_debug("replying [%s]", buf);
   write(fd, buf, size);
 }
 
 void broadcast(peer_msg msg) {
   char buf[BUF_SIZE];
   size_t size = pack_msg(msg, buf);
+  log_debug("broadcasting [%s]", buf);
   char **keys = (char **)hash_keys(peers);
   for (int i = 0; i < peers->len; i++) {
     PD *pd = hash_getv(peers, keys[i]);

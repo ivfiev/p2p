@@ -37,6 +37,9 @@ void handle_text_msg(int fd, peer_msg msg) {
   if (msg_hash == HASH) {
     return;
   }
+  if (msg.argc < 2 && COUNT > 0) { // no-text ""-case
+    goto REPLY;
+  }
   size_t lines_len = strsplit(msg.args[1], "\n", msg_text);
   qsort(msg_text, lines_len, sizeof(char *), (__compar_fn_t)strcmp);
   for (i = j = k = 0; k < MAX_LINES && (i < COUNT || j < lines_len); k++) {
@@ -58,6 +61,7 @@ void handle_text_msg(int fd, peer_msg msg) {
   memcpy(TEXT, tmp, COUNT * sizeof(char *));
   HASH = (int)hash_strs((void **)TEXT, COUNT, 1000000007);
   if (HASH != msg_hash) {
+    REPLY:
     peer_msg reply_msg = pack_text_msg();
     reply(fd, reply_msg);
     free_msg(reply_msg);
@@ -108,7 +112,7 @@ static peer_msg pack_hash_msg(void) {
 static peer_msg pack_text_msg(void) {
   char **args = (char **)calloc(1, sizeof(char *));
   char *hash = malloc(16);
-  char *text = malloc(BUF_SIZE);
+  char *text = calloc(BUF_SIZE, sizeof(char));
   char *ptr = text;
   snprintf(hash, 15, "%d", HASH);
   for (int i = 0; i < COUNT; i++) {
