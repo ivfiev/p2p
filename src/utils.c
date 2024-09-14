@@ -21,6 +21,14 @@ int intcmp(int i, int j) {
   return i - j;
 }
 
+static int pstrcmp(const void *ptr1, const void *ptr2) {
+  return strcmp(*(char **)ptr1, *(char **)ptr2);
+}
+
+void strsort(char **strs, size_t len) {
+  qsort(strs, len, sizeof(char *), pstrcmp);
+}
+
 size_t hash_str(void *ptr, size_t N) {
   size_t i = 0;
   char *str = ptr;

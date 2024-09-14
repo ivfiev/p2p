@@ -23,4 +23,6 @@ size_t hash_strs(void **ptr, size_t count, size_t N);
 
 int intcmp(int i, int j);
 
+void strsort(char **, size_t);
+
 #endif //P2P_UTIL_H
