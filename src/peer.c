@@ -266,7 +266,7 @@ size_t pack_msg(peer_msg msg, char *buf) {
   char *ptr = buf;
   ptr += snprintf(ptr, 16, "%s", msg.cmd);
   for (int i = 0; i < msg.argc; i++) {
-    ptr += snprintf(ptr, BUF_SIZE / 2, ",%s", msg.args[i]);
+    ptr += snprintf(ptr, BUF_SIZE, ",%s", msg.args[i]);
   }
   return strlen(buf) + 1;
 }

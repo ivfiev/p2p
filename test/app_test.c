@@ -4,16 +4,19 @@
 #include "test.h"
 #include "util.h"
 #include "fakes.h"
+#include "hash.h"
 
-extern size_t COUNT;
-extern char *TEXT[];
 extern int HASH;
+extern hashtable *TEXT;
+extern char **CACHED_LINES;
 
 void handle_msg(int, peer_msg msg);
 
 void on_tick(epoll_cb *);
 
 void reset(void);
+
+void setup(char *lines, int hash);
 
 peer_msg get_msg(char *, int, char *);
 
@@ -23,9 +26,9 @@ TEST(add_new_text) {
   peer_msg msg = get_msg("text", 326757776, test);
   handle_msg(11, msg);
   ASSERT_EQ(326757776, HASH);
-  ASSERT_EQ(2, (int)COUNT);
-  ASSERT_STR_EQ("line1", TEXT[0]);
-  ASSERT_STR_EQ("line2", TEXT[1]);
+  ASSERT_EQ(2, (int)TEXT->len);
+  ASSERT_STR_EQ("line1", CACHED_LINES[0]);
+  ASSERT_STR_EQ("line2", CACHED_LINES[1]);
   ASSERT_EQ(0, write_fake.call_count);
   ASSERT_EQ(0, free_fake.call_count);
 }
@@ -36,53 +39,47 @@ TEST(equal_hashes) {
   peer_msg msg = get_msg("text", 8, test);
   HASH = 8;
   handle_msg(11, msg);
-  ASSERT_EQ(0, (int)COUNT);
+  ASSERT_EQ(0, (int)TEXT->len);
   ASSERT_EQ(0, write_fake.call_count);
   ASSERT_EQ(0, free_fake.call_count);
 }
 
 TEST(merge_input) {
   reset();
-  COUNT = 2;
-  TEXT[0] = "line1";
-  TEXT[1] = "line3";
+  setup("line1|line3", 0);
   char test[] = "line2\nline4\n";
   peer_msg msg = get_msg("text", 1, test);
   handle_msg(11, msg);
   ASSERT(HASH > 1);
-  ASSERT_EQ(4, (int)COUNT);
-  ASSERT_STR_EQ("line1", TEXT[0]);
-  ASSERT_STR_EQ("line2", TEXT[1]);
-  ASSERT_STR_EQ("line3", TEXT[2]);
-  ASSERT_STR_EQ("line4", TEXT[3]);
+  ASSERT_EQ(4, (int)TEXT->len);
+  ASSERT_STR_EQ("line1", CACHED_LINES[0]);
+  ASSERT_STR_EQ("line2", CACHED_LINES[1]);
+  ASSERT_STR_EQ("line3", CACHED_LINES[2]);
+  ASSERT_STR_EQ("line4", CACHED_LINES[3]);
   ASSERT_EQ(1, write_fake.call_count);
   ASSERT_EQ(11, write_fake.arg0_val);
-  ASSERT_EQ(3, free_fake.call_count);
+  ASSERT_EQ(4, free_fake.call_count);
 }
 
 TEST(overlapping_lists) {
   reset();
-  COUNT = 2;
-  TEXT[0] = "line1";
-  TEXT[1] = "line2";
+  setup("line1|line2", 0);
   char test[] = "line0\nline2\n";
   peer_msg msg = get_msg("text", 1, test);
   handle_msg(11, msg);
   ASSERT(HASH > 1);
-  ASSERT_EQ(3, (int)COUNT);
-  ASSERT_STR_EQ("line0", TEXT[0]);
-  ASSERT_STR_EQ("line1", TEXT[1]);
-  ASSERT_STR_EQ("line2", TEXT[2]);
+  ASSERT_EQ(3, (int)TEXT->len);
+  ASSERT_STR_EQ("line0", CACHED_LINES[0]);
+  ASSERT_STR_EQ("line1", CACHED_LINES[1]);
+  ASSERT_STR_EQ("line2", CACHED_LINES[2]);
   ASSERT_EQ(1, write_fake.call_count);
   ASSERT_EQ(11, write_fake.arg0_val);
-  ASSERT_EQ(3, free_fake.call_count);
+  ASSERT_EQ(4, free_fake.call_count);
 }
 
 TEST(hash_msg) {
   reset();
-  COUNT = 1;
-  HASH = 7;
-  TEXT[0] = "line1";
+  setup("line1", 7);
   peer_msg msg = get_msg("hash", 1, NULL);
   handle_msg(11, msg);
   ASSERT_EQ(1, write_fake.call_count);
@@ -93,9 +90,7 @@ TEST(hash_msg) {
 
 TEST(hash_broadcast) {
   reset();
-  COUNT = 1;
-  HASH = 7;
-  TEXT[0] = "line1";
+  setup("line1", 7);
   on_tick(NULL);
   ASSERT(write_fake.call_count > 0);
   ASSERT_STR_EQ("hash,7", (char *)write_fake.arg1_val);
@@ -109,6 +104,15 @@ TEST(empty_text) {
   ASSERT_STR_EQ("text,0,", (char *)write_fake.arg1_val);
 }
 
+TEST(numeric_random_case) {
+  reset();
+  setup("04|06", 19131875);
+  char input[] = "05\n08\n06\n06\n06\n";
+  peer_msg msg = get_msg("text", 1, input);
+  handle_msg(11, msg);
+  ASSERT_STR_EQ("text,706047296,04\n05\n06\n08\n", (char *)write_fake.arg1_val);
+}
+
 void app_test_run(void) {
   RUN_TEST(add_new_text);
   RUN_TEST(equal_hashes);
@@ -117,13 +121,28 @@ void app_test_run(void) {
   RUN_TEST(hash_msg);
   RUN_TEST(hash_broadcast);
   RUN_TEST(empty_text);
+  RUN_TEST(numeric_random_case);
 }
 
 void reset(void) {
-  for (int i = 0; i < COUNT; i++) {
-    TEXT[i] = NULL;
+  TEXT = hash_new(128, hash_str, (int (*)(void *, void *))strcmp);
+  HASH = 0;
+  CACHED_LINES = NULL;
+}
+
+void setup(char *lines, int hash) {
+  HASH = hash;
+  char **ls = calloc(16, sizeof(char *));
+  char tmp[1024];
+  strcpy(tmp, lines);
+  size_t count = strsplit(tmp, "|", ls);
+  strsort(ls, count);
+  for (int i = 0; i < count; i++) {
+    char *s = strdup(ls[i]);
+    hash_set(TEXT, s, NULL);
+    ls[i] = s;
   }
-  COUNT = HASH = 0;
+  CACHED_LINES = ls;
 }
 
 peer_msg get_msg(char *cmd, int h, char *test_input) {
